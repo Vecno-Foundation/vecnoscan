@@ -42,7 +42,7 @@ export default function Blocks() {
   const { blocks: incomingBlocks, avgBlockTime } = useIncomingBlocks();
 
   useEffect(() => {
-    setBlocks(prev => {
+    setBlocks((prev) => {
       const combined = [...incomingBlocks, ...prev];
       return combined.slice(0, 20);
     });
@@ -99,10 +99,14 @@ export default function Blocks() {
           headers={["Timestamp", "Hash", "BlueScore", "TX Count"]}
           additionalClassNames={{ 1: "overflow-hidden" }}
           rows={blocks.slice(0, 10).map((block) => [
-            dayjs(parseInt(block.timestamp)).format("HH:mm:ss"),
-            <VeLink linkType="block" link to={block.block_hash} mono />,
-            numeral(block.blueScore).format("0,0"),
-            block.txCount,
+            <span key="timestamp">
+              {dayjs(parseInt(block.timestamp)).format("HH:mm:ss")}
+            </span>,
+            <VeLink key="hash" linkType="block" link to={block.block_hash} mono />,
+            <span key="bluescore">
+              {numeral(block.blueScore).format("0,0")}
+            </span>,
+            <span key="txcount">{block.txCount}</span>,
           ])}
         />
       </div>

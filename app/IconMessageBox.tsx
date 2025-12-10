@@ -16,16 +16,18 @@ export default function IconMessageBox(props: DataMessageProps) {
 
   return (
     <div className="flex w-full flex-col items-center rounded-4xl bg-white px-4 py-12 sm:py-24">
-      {props.icon == "data" && <Data className={iconClassName} />}
-      {props.icon == "error" && <ErrorIcon className={iconClassName} />}
-
-      <p className="overflow- mt-4 mb-6">
+      {props.icon === "data" && <Data className={iconClassName} />}
+      {props.icon === "error" && <ErrorIcon className={iconClassName} />}
+      <div className="mt-4 mb-6 text-center">
         <div className="flex flex-col items-center justify-center">
           <div className="text-xl font-medium">{props.title}</div>
           <div className="text-center">{props.description}</div>
         </div>
-      </p>
-      {props.goBack && <Button className="h-10" value="Go back" primary onClick={() => navigate(-1)} />}
+      </div>
+
+      {props.goBack && (
+        <Button className="h-10" value="Go back" primary onClick={() => navigate(-1)} />
+      )}
     </div>
   );
 }

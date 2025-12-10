@@ -12,7 +12,6 @@ import Swap from "../assets/swap.svg";
 import Transaction from "../assets/transaction.svg";
 import { MarketDataContext } from "../context/MarketDataProvider";
 import { useTransactionById } from "../hooks/useTransactionById";
-import { useTransactionCount } from "../hooks/useTransactionCount";
 import { useVirtualChainBlueScore } from "../hooks/useVirtualChainBlueScore";
 import FooterHelper from "../layout/FooterHelper";
 import type { Route } from "./+types/transactiondetails";
@@ -60,7 +59,6 @@ export default function TransactionDetails({ loaderData }: Route.ComponentProps)
     return <LoadingMessage>Fetching transaction details...</LoadingMessage>;
   }
 
-  // type guard transaction
   if (isError || !transaction) {
     return (
       <ErrorMessage>
@@ -73,10 +71,8 @@ export default function TransactionDetails({ loaderData }: Route.ComponentProps)
   const transactionSum = (transaction.outputs || []).reduce((sum, output) => sum + output.amount, 0);
   const displayVE = (x: number) => numeral((x || 0) / 1_0000_0000).format("0,0.00[000000]");
   const displaySum = displayVE(transactionSum);
-  const inputSum = transaction?.inputs?.reduce((sum, input) => sum + input.previous_outpoint_amount, 0) || 0;
-
+  const inputSum = transaction?.inputs?.reduce((sum, input) => sum + (input.previous_outpoint_amount || 0), 0) || 0;
   const blockTime = dayjs(transaction?.block_time);
-
   const fee = (inputSum - transactionSum) / 1_0000_0000;
 
   return (
@@ -96,16 +92,16 @@ export default function TransactionDetails({ loaderData }: Route.ComponentProps)
         <span className="ml-1 text-gray-500">
           {numeral(((transactionSum || 0) / 1_0000_0000) * (marketData?.price || 0)).format("$0,0.00")}
         </span>
-        <div className={`my-4 h-[1px] bg-gray-100 sm:col-span-2`} />
+        <div className="my-4 h-[1px] bg-gray-100 sm:col-span-2" />
 
         <div className="grid grid-cols-1 gap-x-14 gap-y-2 sm:grid-cols-[auto_1fr]">
           <FieldName name="From" infoText="The (input) address(es) that sent VE in this transaction." />
           <FieldValue
             value={
               <ul>
-                {transaction.inputs ? (
-                  [...new Set(transaction.inputs.map((input) => input.previous_outpoint_address))].map((addr) => (
-                    <li>
+                {transaction.inputs && transaction.inputs.length > 0 ? (
+                  [...new Set(transaction.inputs.map((input) => input.previous_outpoint_address))].map((addr, idx) => (
+                    <li key={idx}>
                       <VeLink linkType="address" copy link to={addr} />
                     </li>
                   ))
@@ -121,9 +117,9 @@ export default function TransactionDetails({ loaderData }: Route.ComponentProps)
           <FieldValue
             value={
               <ul>
-                {transaction.outputs ? (
-                  [...new Set(transaction.outputs.map((output) => output.script_public_key_address))].map((addr) => (
-                    <li>
+                {transaction.outputs && transaction.outputs.length > 0 ? (
+                  [...new Set(transaction.outputs.map((output) => output.script_public_key_address))].map((addr, idx) => (
+                    <li key={idx}>
                       <VeLink linkType="address" copy link to={addr} resolveName />
                     </li>
                   ))
@@ -180,35 +176,33 @@ export default function TransactionDetails({ loaderData }: Route.ComponentProps)
               name="Status"
               infoText="Displays whether the transaction was accepted by the protocol and how many confirmations it has so far."
             />
-
             <FieldValue value={displayAcceptance(transaction.is_accepted, confirmations)} />
-            <div className={`my-4 h-[1px] bg-gray-100 sm:col-span-2`} />
+            <div className="my-4 h-[1px] bg-gray-100 sm:col-span-2" />
             <FieldName name="Hash" infoText="Hash calculated from the transaction data." />
             <FieldValue value={transaction.hash} />
             <FieldName
               name="Compute mass"
               infoText="The computed mass / weight of a transaction. It's used to determine the fee of a transaction."
             />
-
             <FieldValue value={inputSum === 0 ? 0 : transaction.mass} />
-            <div className={`my-4 h-[1px] bg-gray-100 sm:col-span-2`} />
+            <div className="my-4 h-[1px] bg-gray-100 sm:col-span-2" />
             <FieldName name="Block hashes" infoText="Blocks, in which this transaction was included." />
             <FieldValue
-              value={transaction.block_hash.map((blockHash) => (
-                <div>
-                  <VeLink linkType="block" link to={blockHash} />
+              value={
+                <div className="flex flex-col gap-1">
+                  {transaction.block_hash.map((blockHash, idx) => (
+                    <VeLink key={idx} linkType="block" link to={blockHash} />
+                  ))}
                 </div>
-              ))}
+              }
             />
             <FieldName name="Block time" infoText="Timestamp, when the transaction was included in a block." />
             <FieldValue
               value={
-                <>
-                  <div className="flex flex-col">
-                    <span>{blockTime.fromNow()}</span>
-                    <span className="text-gray-500">{blockTime.format("ll LTS")}</span>
-                  </div>
-                </>
+                <div className="flex flex-col">
+                  <span>{blockTime.fromNow()}</span>
+                  <span className="text-gray-500">{blockTime.format("ll LTS")}</span>
+                </div>
               }
             />
             <FieldName
@@ -235,7 +229,7 @@ export default function TransactionDetails({ loaderData }: Route.ComponentProps)
             )}
             {(transaction.inputs || []).length > 0 && (
               <>
-                <div className={`my-4 h-[1px] bg-gray-100 sm:col-span-2`} />
+                <div className="my-4 h-[1px] bg-gray-100 sm:col-span-2" />
                 <FieldName
                   name="Transaction fee"
                   infoText="Fee for this transaction which goes to miners as reward. It is the total output amount minus the total input amount."
@@ -259,32 +253,30 @@ export default function TransactionDetails({ loaderData }: Route.ComponentProps)
         {isTabActive("inputs") && (
           <>
             {transaction.inputs && transaction.inputs.length > 0 ? (
-              <div className="text-nowrap">
+              <div className="text-nowrap overflow-x-auto">
                 <PageTable
-                  rows={transaction.inputs.map((input) => {
-                    return [
-                      input.sig_op_count,
-                      <span className="text-wrap">{input.signature_script}</span>,
-                      <>
-                        <VeLink linkType="transaction" link shorten to={input.previous_outpoint_hash} />
-                        {` #${input.previous_outpoint_index}`}
-                      </>,
-                      <VeLink linkType="address" shorten link to={input.previous_outpoint_address} />,
-                      <>
-                        <span className="text-nowrap">
-                          {displayVE(input.previous_outpoint_amount).split(".")[0]}.
-                          <span className="self-end pb-[0.4rem]">
-                            {displayVE(input.previous_outpoint_amount).split(".")[1]}
-                          </span>
+                  rows={transaction.inputs.map((input, idx) => [
+                    input.sig_op_count,
+                    <span key="sig-script" className="text-wrap">{input.signature_script}</span>,
+                    <>
+                      <VeLink key="outpoint-tx" linkType="transaction" link shorten to={input.previous_outpoint_hash} />
+                      {` #${input.previous_outpoint_index}`}
+                    </>,
+                    <VeLink key="address" linkType="address" shorten link to={input.previous_outpoint_address} />,
+                    <>
+                      <span key="amount" className="text-nowrap">
+                        {displayVE(input.previous_outpoint_amount || 0).split(".")[0]}.
+                        <span className="self-end pb-[0.4rem]">
+                          {displayVE(input.previous_outpoint_amount || 0).split(".")[1]}
                         </span>
-                        <span className="text-gray-500 text-nowrap"> VE</span>
-                      </>,
-                    ];
-                  })}
+                      </span>
+                      <span className="text-gray-500 text-nowrap"> VE</span>
+                    </>,
+                  ])}
                   headers={[
                     "Sig Op Count",
                     "Signature Script",
-                    <span className="text-nowrap">Outpoint ID & Index</span>,
+                    <span key="header-outpoint" className="text-nowrap">Outpoint ID & Index</span>,
                     "Outpoint Address",
                     "Amount",
                   ]}
@@ -301,24 +293,21 @@ export default function TransactionDetails({ loaderData }: Route.ComponentProps)
         {isTabActive("outputs") && transaction.outputs && transaction.outputs.length > 0 && (
           <PageTable
             headers={["Index", "Type", "Script Public Key", "Script Public Key Address", "Amount"]}
-            rows={transaction.outputs.map((output) => {
-              return [
-                output.index || "0",
-                <span className="text-nowrap">{output.script_public_key_type}</span>,
-                output.script_public_key,
-                <VeLink linkType="address" to={output.script_public_key_address} link resolveName />,
-                <span className="text-nowrap">
-                  <span>
-                    {displayVE(output.amount).split(".")[0]}.
-                    <span className="self-end pb-[0.4rem]">{displayVE(output.amount).split(".")[1]}</span>
-                  </span>
-                  <span className="text-gray-500 text-nowrap"> VE</span>
-                </span>,
-              ];
-            })}
+            rows={transaction.outputs.map((output, idx) => [
+              output.index ?? idx,
+              <span key="type" className="text-nowrap">{output.script_public_key_type}</span>,
+              <span key="script">{output.script_public_key}</span>,
+              <VeLink key="address" linkType="address" to={output.script_public_key_address} link resolveName />,
+              <span key="amount" className="text-nowrap">
+                {displayVE(output.amount).split(".")[0]}.
+                <span className="self-end pb-[0.4rem]">{displayVE(output.amount).split(".")[1]}</span>
+                <span className="text-gray-500 text-nowrap"> VE</span>
+              </span>,
+            ])}
           />
         )}
       </div>
+
       <FooterHelper icon={Transaction}>
         A transaction is a cryptographically signed command that modifies the blockchain's state. Block explorers
         monitor and display the details of every transaction within the network.
@@ -328,7 +317,7 @@ export default function TransactionDetails({ loaderData }: Route.ComponentProps)
 }
 
 const FieldName = ({ name, infoText, className }: { name: string; infoText?: string; className?: string }) => (
-  <div className={`flex flex-row items-start fill-gray-500 text-gray-500 sm:col-start-1 ${className ? className : ""}`}>
+  <div className={`flex flex-row items-start fill-gray-500 text-gray-500 sm:col-start-1 ${className || ""}`}>
     <div className="flex flex-row items-center">
       <Tooltip message={infoText || ""} display={TooltipDisplayMode.Hover} multiLine>
         <InfoIcon className="h-4 w-4" />
@@ -339,5 +328,5 @@ const FieldName = ({ name, infoText, className }: { name: string; infoText?: str
 );
 
 const FieldValue = ({ value, className }: { value: string | React.ReactNode; className?: string }) => (
-  <span className={`text-wrap break-all ${className}`}>{value}</span>
+  <span className={`text-wrap break-all ${className || ""}`}>{value}</span>
 );

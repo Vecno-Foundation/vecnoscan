@@ -61,15 +61,13 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
   const marketData = useContext(MarketDataContext);
   const [beforeAfter, setBeforeAfter] = useState<number[]>([0, 0]);
   const [currentPage, setCurrentPage] = useState<number>(1);
-
   const [expand, setExpand] = useState<string[]>([]);
 
   useEffect(() => {
-    setBeforeAfter([0, 0]); // Reset beforeAfter state
-    setCurrentPage(1); // Reset currentPage state
+    setBeforeAfter([0, 0]);
+    setCurrentPage(1);
   }, [loaderData.address]);
 
-  // fetch transactions with resolve_previous_outpoints set to "light"
   const { data: txData } = useTransactions(
     loaderData.address,
     10,
@@ -80,10 +78,6 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
   );
 
   const pageChange = (page: number) => {
-    // FIRST = 0,
-    // LAST = 3,
-    // PREVIOUS = 2,
-    // NEXT = 1,
     if (page === 0) {
       setBeforeAfter([0, 0]);
       setCurrentPage(1);
@@ -101,7 +95,7 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
 
   const transactions = txData?.transactions || [];
 
-  if (!loaderData.address) return;
+  if (!loaderData.address) return null;
 
   const isTabActive = (tab: string) => {
     const params = new URLSearchParams(location.search);
@@ -137,7 +131,7 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
         ) : (
           <LoadingSpinner />
         )}
-        <div className={`my-4 h-[1px] bg-gray-100 sm:col-span-2`} />
+        <div className="my-4 h-[1px] bg-gray-100 sm:col-span-2" />
 
         <div className="grid grid-cols-1 gap-x-14 gap-y-2 sm:grid-cols-[auto_1fr]">
           <FieldName name="Address" infoText="A unique Vecno address used to send and receive funds." />
@@ -185,7 +179,7 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
 
         {isTabActive("transactions") && (
           <div className="w-full">
-            {transactions && transactions.length > 0 ? (
+            {transactions.length > 0 ? (
               <>
                 <PageTable
                   alignTop
@@ -196,49 +190,50 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
                     4: "md:w-40 lg:w-50",
                     3: "hidden md:table-cell",
                   }}
-                  rows={(transactions || []).map((transaction) => [
+                  rows={transactions.map((transaction) => [
                     <Tooltip
+                      key="timestamp"
                       message={dayjs(transaction.block_time).format("MMM D, YYYY h:mm A")}
                       display={TooltipDisplayMode.Hover}
                     >
                       {dayjs(transaction.block_time).fromNow()}
                     </Tooltip>,
-                    <VeLink shorten linkType="transaction" link to={transaction.transaction_id} mono />,
+                    <VeLink key="txid" shorten linkType="transaction" link to={transaction.transaction_id} mono />,
                     (transaction.inputs || []).length > 0 ? (
-                      <ul className="leading-tight">
+                      <ul key="inputs" className="leading-tight">
                         {(transaction.inputs || [])
-                          .slice(0, expand.indexOf(transaction.transaction_id) === -1 ? 5 : undefined)
-                          .map(
-                            (input) =>
-                              input.previous_outpoint_address && (
-                                <li>
-                                  <VeLink
-                                    link={input.previous_outpoint_address !== loaderData.address}
-                                    linkType="address"
-                                    to={input.previous_outpoint_address}
-                                    shorten
-                                    resolveName
-                                    mono
-                                  />
-                                </li>
-                              ),
+                          .slice(0, expand.includes(transaction.transaction_id) ? undefined : 5)
+                          .map((input, idx) =>
+                            input.previous_outpoint_address ? (
+                              <li key={idx}>
+                                <VeLink
+                                  link={input.previous_outpoint_address !== loaderData.address}
+                                  linkType="address"
+                                  to={input.previous_outpoint_address}
+                                  shorten
+                                  resolveName
+                                  mono
+                                />
+                              </li>
+                            ) : null
                           )}
-                        {(transaction.inputs || []).length > 5 && expand.indexOf(transaction.transaction_id) === -1 && (
+                        {(transaction.inputs || []).length > 5 && !expand.includes(transaction.transaction_id) && (
                           <span
+                            key="show-more"
                             className="text-link cursor-pointer hover:underline"
-                            onClick={() => setExpand((expand) => expand.concat(transaction.transaction_id))}
+                            onClick={() => setExpand((prev) => [...prev, transaction.transaction_id])}
                           >
-                            Show more (+{transaction.inputs!.length - 5})
+                            Show more (+{(transaction.inputs || []).length - 5})
                           </span>
                         )}
                       </ul>
                     ) : (
-                      <Coinbase />
+                      <Coinbase key="coinbase" />
                     ),
-                    <ArrowRight className="inline h-4 w-4" />,
-                    <ul className="leading-tight">
-                      {(transaction.outputs || []).map((output) => (
-                        <li>
+                    <ArrowRight key="arrow" className="inline h-4 w-4" />,
+                    <ul key="outputs" className="leading-tight">
+                      {(transaction.outputs || []).map((output, idx) => (
+                        <li key={idx}>
                           <VeLink
                             linkType="address"
                             to={output.script_public_key_address}
@@ -269,7 +264,9 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
                       ).format("+0,0.00[000000]")}
                       <span className="text-gray-500 text-nowrap"> VE</span>
                     </>,
-                    <span className="text-sm">{transaction.is_accepted ? <Accepted /> : <NotAccepted />}</span>,
+                    <span key="status" className="text-sm">
+                      {transaction.is_accepted ? <Accepted /> : <NotAccepted />}
+                    </span>,
                   ])}
                 />
                 <div className="ms-auto me-5 flex flex-row justify-center items-center">
@@ -297,16 +294,16 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
             {(utxoData?.length ?? 0) > 0 ? (
               <>
                 <PageTable
-                  rows={(utxoData?.slice(0, 50) || []).map((utxo) => [
+                  rows={(utxoData?.slice(0, 50) || []).map((utxo, index) => [
                     utxo.utxoEntry.blockDaaScore,
-                    <VeLink linkType="transaction" to={utxo.outpoint.transactionId} link />,
+                    <VeLink key={`tx-${index}`} linkType="transaction" to={utxo.outpoint.transactionId} link />,
                     utxo.outpoint.index,
                     numeral(parseFloat(utxo.utxoEntry.amount) / 1_0000_0000).format("0,0.00[000000]") + " VE",
                   ])}
                   headers={["Block DAA Score", "Transaction ID", "Index", "Amount"]}
                 />
-                {utxoData?.slice(0, 50).length === 50 && (
-                  <div className="me-auto ms-auto">
+                {utxoData && utxoData.length >= 50 && (
+                  <div className="me-auto ms-auto text-center">
                     There are more than 50 UTXOs for this address, which are not displayed.
                   </div>
                 )}
@@ -322,7 +319,7 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
         )}
       </div>
       <FooterHelper icon={AccountBalanceWallet}>
-        <span className="">
+        <span>
           An address is a unique identifier on the blockchain used to send, receive, and store assets or data. It holds
           balances and interacts with the network securely.
         </span>
