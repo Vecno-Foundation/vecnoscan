@@ -39,16 +39,16 @@ export const MarketDataProvider = ({ children }: { children: ReactNode }) => {
       }
 
       setMarketData({
-        price: typeof usdPrice === "number" ? usdPrice : null,
-        change24h: formattedChange,
+        price: typeof usdPrice === "number" ? usdPrice : 0.02,
+        change24h: formattedChange ?? "0.00%",
         isLoading: false,
         error: false,
       });
     } catch (err) {
       console.error("Failed to fetch market data:", err);
       setMarketData({
-        price: null,
-        change24h: null,
+        price: 0.02,
+        change24h: "0.00%",
         isLoading: false,
         error: true,
       });
@@ -56,12 +56,8 @@ export const MarketDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Initial fetch
     updateMarketData();
-
-    // Update every 60 seconds
     const interval = setInterval(updateMarketData, 60_000);
-
     return () => clearInterval(interval);
   }, []);
 

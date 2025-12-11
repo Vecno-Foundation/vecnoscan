@@ -7,6 +7,7 @@ export default [
   route("transactions", "./routes/transactions.tsx"),
   route("transactions/:transactionId", "./routes/transactiondetails.tsx"),
   route("addresses", "./routes/addresses.tsx"),
+  route("movements", "./routes/movements.tsx"),
   route("addresses/:address", "./routes/addressdetails.tsx"),
   route("analytics", "./routes/analytics.tsx"),
 
