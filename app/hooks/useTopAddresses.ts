@@ -1,4 +1,3 @@
-// app/hooks/useTopAddresses.ts
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
@@ -19,30 +18,40 @@ export const useTopAddresses = () => {
     queryKey: ["topAddresses"],
     queryFn: async () => {
       const res = await axios.get(`${API_URL}/addresses/balances/csv/paged`, {
-        params: { page: 1, items_per_page: 100 },
+        params: { page: 1, items_per_page: 1000 },
         responseType: "text",
       });
 
       const lines = res.data.trim().split("\n");
-      const ranking = lines
-        .slice(1) // skip header
+
+      let ranking: TopAddress[] = lines
+        .slice(1)
         .filter((line: string) => line.trim() !== "")
-        .map((line: string, index: number): TopAddress => {
-          const [address, balanceStr] = line.split(",");
+        .map((line: string, index: number) => {
+          const [address = "", balanceStr = "0"] = line.split(",");
+          const amount = Number(balanceStr.trim());
           return {
             rank: index,
             address: address.trim(),
-            amount: Number(balanceStr.trim()),
+            amount,
           };
-        });
+        })
+        .filter((addr: TopAddress): addr is TopAddress => addr.amount > 0);
 
-      // Explicitly type the sort parameters
       ranking.sort((a: TopAddress, b: TopAddress) => b.amount - a.amount);
+
+      ranking = ranking.map((addr, index) => ({
+        ...addr,
+        rank: index,
+      }));
 
       return { ranking };
     },
-    staleTime: 1000 * 60 * 2,      // 2 minutes
-    refetchInterval: 1000 * 60 * 2, // Poll every 2 minutes
-    gcTime: Infinity,              // Keep alive across navigation
+    staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 60 * 2,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    gcTime: Infinity,
   });
 };
