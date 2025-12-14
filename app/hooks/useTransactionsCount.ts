@@ -1,4 +1,3 @@
-// app/hooks/useTransactionsCount.ts
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
@@ -7,7 +6,6 @@ const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "https://api
 export interface TransactionsCount {
   total: number;
   regular: number;
-  coinbase: number;
   timestamp: number;
 }
 

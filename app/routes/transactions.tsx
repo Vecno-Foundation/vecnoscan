@@ -4,9 +4,8 @@ import Transaction from "../assets/transaction.svg";
 import { MarketDataContext } from "../context/MarketDataProvider";
 import { useFeeEstimate } from "../hooks/useFeeEstimate";
 import { useIncomingBlocks } from "../hooks/useIncomingBlocks";
-import { useMempoolSize } from "../hooks/useMempoolSize";
-import { useTransactionCount } from "../hooks/useTransactionCount";
 import { useTransactionsCount } from "../hooks/useTransactionsCount";
+import { useRecentTransactionsCount } from "../hooks/useRecentTransactionsCount";
 import Card from "../layout/Card";
 import CardContainer from "../layout/CardContainer";
 import FooterHelper from "../layout/FooterHelper";
@@ -28,27 +27,27 @@ export function meta() {
 
 export default function Transactions() {
   const { transactions } = useIncomingBlocks();
-  const { data: transactionCount, isLoading: isLoadingTxCount } = useTransactionCount();
   const { data: feeEstimate, isLoading: isLoadingFee } = useFeeEstimate();
   const marketData = useContext(MarketDataContext);
-  const { data: transactionsCountTotal, isLoading: isLoadingTxCountTotal } = useTransactionsCount();
-  const { mempoolSize } = useMempoolSize();
+  const { data: totalTxData, isLoading: isLoadingTxTotal } = useTransactionsCount();
+  const { data: recentTxData, isLoading: isLoadingTxRecent } = useRecentTransactionsCount();
 
-  // Smart total transactions (540K, 1.2M, etc.)
-  const totalTxCount = isLoadingTxCountTotal
+  const totalTxCount = isLoadingTxTotal
     ? ""
-    : transactionsCountTotal
-      ? numeral(transactionsCountTotal.total).format("0.[0]a").toUpperCase()
+    : totalTxData
+      ? numeral(totalTxData.total).format("0.[0]a").toUpperCase()
       : "0";
 
-  const txCount =
-    transactionCount && transactionCount.length > 0
-      ? ((transactionCount[0].regular + transactionCount[0].coinbase) / 3600).toFixed(1)
-      : "-";
+  const recentTxCount24h = isLoadingTxRecent
+    ? ""
+    : recentTxData
+      ? numeral(recentTxData.transactions_last_24h).format("0.[0]a").toUpperCase()
+      : "0";
 
   const regularFee = feeEstimate
     ? (feeEstimate.normalBuckets[0].feerate * 2036) / 100_000_000
     : 0;
+
   const regularFeeUsd = regularFee * (marketData?.price ?? 0);
 
   return (
@@ -58,12 +57,12 @@ export default function Transactions() {
           <Card
             title="Total transactions"
             value={totalTxCount}
-            loading={isLoadingTxCountTotal}
+            loading={isLoadingTxTotal}
           />
           <Card
-            title="Average TPS (1 hr)"
-            value={txCount}
-            loading={isLoadingTxCount}
+            title="Transactions last 24 hours"
+            value={recentTxCount24h}
+            loading={isLoadingTxRecent}
           />
           <Card
             title="Regular fee"
@@ -71,7 +70,6 @@ export default function Transactions() {
             subtext={`${numeral(regularFeeUsd).format("$0,0.00[0000]")}`}
             loading={isLoadingFee}
           />
-          <Card title="Mempool size" value={mempoolSize || "0"} />
         </CardContainer>
       </MainBox>
 
@@ -87,7 +85,7 @@ export default function Transactions() {
             <VeLink linkType="transaction" link to={tx.txId} mono />,
             <>
               {numeral(
-                tx.outputs.reduce((acc, o) => acc + Number(o[1]), 0) / 100_000_000
+                tx.outputs.reduce((acc: number, o: [string, string]) => acc + Number(o[1]), 0) / 100_000_000
               ).format("0,0.[00]")}
               <span className="text-gray-500"> VE</span>
             </>,
