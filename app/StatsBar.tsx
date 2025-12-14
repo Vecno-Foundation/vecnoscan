@@ -115,7 +115,7 @@ export const StatsBar = () => {
       <StatItem icon={<Icon><Time /></Icon>} label="Block Time" value="1" unit="s" />
       <StatItem icon={<Icon><AccountBalanceWallet /></Icon>} label="Addresses" value={numeral(activeAddresses).format("0.[0]a")} loading={l6} />
       <StatItem icon={<Icon><Trophy /></Icon>} label="Block Reward" value={(blockReward?.blockreward || 0).toFixed(2)} unit="VE" loading={l3} />
-      <StatItem icon={<Icon><Swap /></Icon>} label="Next Halving" value={halving?.nextHalvingDate || "—"} loading={l4} />
+      <StatItem icon={<Icon><Swap /></Icon>} label="Next Reduction" value={halving?.nextHalvingDate || "—"} loading={l4} />
     </div>
   );
 

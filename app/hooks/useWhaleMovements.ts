@@ -1,4 +1,3 @@
-// app/hooks/useWhaleMovements.ts
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
@@ -13,7 +12,6 @@ export interface WhaleMovement {
 
 const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "https://api.vecnoscan.org";
 
-// hooks/useWhaleMovements.ts
 export const useWhaleMovements = () => {
   return useQuery({
     queryKey: ["whaleMovements"],

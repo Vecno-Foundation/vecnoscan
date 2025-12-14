@@ -134,6 +134,7 @@ const MobileMenu = ({ showMenu, onCloseRequest }: MobileMenuProps) => {
           <MenuItem name="Blocks" to="/blocks" onClick={onCloseRequest} />
           <MenuItem name="Transactions" to="/transactions" onClick={onCloseRequest} />
           <MenuItem name="Addresses" to="/addresses" onClick={onCloseRequest} />
+          <MenuItem name="Movements" to="/movements" onClick={onCloseRequest} />
         </div>
       </div>
       <div className="shrink-0 py-12 px-6 border-t border-gray-800 bg-black/40">
