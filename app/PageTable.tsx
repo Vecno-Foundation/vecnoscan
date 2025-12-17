@@ -25,7 +25,7 @@ const PageTable = (props: PageTableProps) => {
         <tr>
           {headers.map((headerName, i) => (
             <td
-              key={i} // Key for header cells
+              key={i}
               className={`block md:table-cell py-2 ps-4 text-gray-500 last:text-right md:last:pe-4 md:pe-4 ${
                 additionalClassNames?.[i] || ""
               }`}
@@ -37,7 +37,6 @@ const PageTable = (props: PageTableProps) => {
       </thead>
       <tbody>
         {rows.map((row, rowIndex) => {
-          // Prefer provided rowKey, fallback to index (index is acceptable if rows are static or not reordered)
           const rowKey = rowKeys?.[rowIndex] ?? rowIndex;
 
           return (
@@ -47,13 +46,11 @@ const PageTable = (props: PageTableProps) => {
             >
               {row.map((cell, cellNr) => (
                 <React.Fragment key={cellNr}>
-                  {/* Mobile label */}
                   {headers[cellNr] && (
                     <td className="pt-2 md:hidden text-gray-500">
                       {headers[cellNr]}
                     </td>
                   )}
-                  {/* Cell content */}
                   <td
                     className={`break-all pt-0 md:ps-4 md:last:pe-4 md:py-3 text-left xs:text-left md:last:text-right last:pb-4 ${
                       additionalClassNames?.[cellNr] || ""
