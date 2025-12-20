@@ -11,7 +11,7 @@ export interface WhaleMovement {
   index: number;
 }
 
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:7000";
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "https://api.vecnoscan.org";
 
 export const useWhaleMovements = () => {
   return useQuery({
