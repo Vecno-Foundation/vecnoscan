@@ -44,10 +44,15 @@ export function meta({ params }: Route.LoaderArgs) {
 
 export default function Blocks({ loaderData }: Route.ComponentProps) {
   const { data: block, isLoading, isError } = useBlockById(loaderData.blockId);
+
+  const txIdsForSearch = (block?.transactions ?? [])
+    .flatMap((tx) => [
+      tx.verboseData.transactionId,
+      ...(tx.inputs ?? []).map((input) => input.previousOutpoint.transactionId),
+    ]);
+
   const { data: inputTxs, refetch: fetchTransactions } = useTransactionsSearch(
-    (block?.transactions.map((tx) => tx.verboseData.transactionId) || []).concat(
-      block?.transactions.flatMap((tx) => tx.inputs.map((input) => input.previousOutpoint.transactionId)) || [],
-    ),
+    txIdsForSearch,
     "",
     "light",
     false,
@@ -63,7 +68,7 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
 
   useEffect(() => {
     if (block && inputTxs) {
-      const cntNotAccepted = block.transactions
+      const cntNotAccepted = (block.transactions ?? [])
         .map((transaction) => getTxFromInputTxs(transaction.verboseData.transactionId)?.is_accepted ?? false)
         .filter((accepted) => !accepted).length;
 
@@ -72,7 +77,7 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
         return () => clearTimeout(timeoutRefetch);
       }
     }
-  }, [inputTxs]);
+  }, [inputTxs, block]);
 
   const blockTime = dayjs(Number(block?.header.timestamp));
 
@@ -90,9 +95,7 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
   }
 
   const getTxFromInputTxs = (txId: string) => {
-    for (const tx of inputTxs || []) {
-      if (tx.transaction_id === txId) return tx;
-    }
+    return (inputTxs || []).find((tx) => tx.transaction_id === txId);
   };
 
   const getAddressFromOutpoint = (txId: string, outpointIndex: number) => {
@@ -155,7 +158,7 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
         <FieldValue
           value={
             <div className="flex flex-col gap-1">
-              {block.header.parents[0].parentHashes.map((parentHash, idx) => (
+              {(block.header.parents[0]?.parentHashes || []).map((parentHash, idx) => (
                 <VeLink key={idx} linkType="block" link to={parentHash} mono />
               ))}
             </div>
@@ -165,7 +168,7 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
         <FieldValue
           value={
             <div className="flex flex-col gap-1">
-              {block.verboseData.childrenHashes.map((child, idx) => (
+              {(block.verboseData.childrenHashes || []).map((child, idx) => (
                 <VeLink key={idx} linkType="block" link to={child} mono />
               ))}
             </div>
@@ -214,7 +217,7 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
           alignTop
           headers={["Transaction ID", "From", "", "To", "Amount", "Status"]}
           rows={
-            block.transactions.map((transaction) => [
+            (block.transactions ?? []).map((transaction) => [
               <VeLink
                 key="txid"
                 linkType="transaction"
@@ -224,8 +227,8 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
                 mono
               />,
               <ul key="inputs">
-                {transaction.inputs.length > 0 ? (
-                  transaction.inputs.map((input, idx) => (
+                {(transaction.inputs ?? []).length > 0 ? (
+                  (transaction.inputs ?? []).map((input, idx) => (
                     <li key={idx}>
                       {getAddressFromOutpoint(input.previousOutpoint.transactionId, input.previousOutpoint.index)}
                     </li>
@@ -238,7 +241,7 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
               </ul>,
               <ArrowRight key="arrow" className="inline h-4 w-4" />,
               <ul key="outputs">
-                {transaction.outputs.map((output, idx) => (
+                {(transaction.outputs ?? []).map((output, idx) => (
                   <li key={idx}>
                     <VeLink
                       linkType="address"
@@ -252,7 +255,7 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
                 ))}
               </ul>,
               <ul key="amounts">
-                {transaction.outputs.map((output, idx) => (
+                {(transaction.outputs ?? []).map((output, idx) => (
                   <li key={idx}>
                     {numeral(output.amount / 1_0000_0000).format("0,0.00[000000]")}
                     <span className="text-gray-500 text-nowrap"> VE</span>
@@ -268,7 +271,7 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
                     : undefined,
                 )}
               </div>,
-            ]) || []
+            ])
           }
         />
       </div>
