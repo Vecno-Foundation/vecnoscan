@@ -48,17 +48,37 @@ export default function Movements() {
     groupedMovements[m.transaction_id].push(m);
   });
 
-  const orderedTxIds = Array.from(new Set(movements.map((m) => m.transaction_id)));
+  const filteredGroups: { [txId: string]: WhaleMovement[] } = {};
+  Object.keys(groupedMovements).forEach((txId) => {
+    const group = groupedMovements[txId];
+    const fromAddresses = new Set(
+      group
+        .filter((m) => m.from_address)
+        .map((m) => m.from_address!.toLowerCase())
+    );
 
-  const totalMovements = movements.length;
-  const totalVolumeVE = movements.reduce((sum: number, m: WhaleMovement) => sum + m.amount, 0) / VE;
+    const meaningful = group.filter(
+      (m) => !fromAddresses.has(m.to_address.toLowerCase())
+    );
+
+    if (meaningful.length > 0) {
+      filteredGroups[txId] = meaningful;
+    }
+  });
+
+  const allFilteredMovements = Object.values(filteredGroups).flat();
+
+  const totalMovements = allFilteredMovements.length;
+  const totalVolumeVE = allFilteredMovements.reduce((sum, m) => sum + m.amount, 0) / VE;
   const totalValueUSD = totalVolumeVE * (price ?? 0);
   const largestMovementVE =
-    movements.length > 0 ? Math.max(...movements.map((m: WhaleMovement) => m.amount)) / VE : 0;
+    allFilteredMovements.length > 0
+      ? Math.max(...allFilteredMovements.map((m) => m.amount)) / VE
+      : 0;
 
   const tableRows: ReactNode[][] = [];
-  for (const txId of orderedTxIds) {
-    const group = groupedMovements[txId];
+  for (const txId of Object.keys(filteredGroups)) {
+    const group = filteredGroups[txId];
     group.forEach((m, gIdx) => {
       const time = dayjs(m.block_time);
       const amountVE = m.amount / VE;
@@ -136,8 +156,8 @@ export default function Movements() {
       </div>
       <div className="block md:hidden">
         <div className="p-4 space-y-4">
-          {orderedTxIds.map((txId) => {
-            const group = groupedMovements[txId];
+          {Object.keys(filteredGroups).map((txId) => {
+            const group = filteredGroups[txId];
             const first = group[0];
             const time = dayjs(first.block_time);
 
