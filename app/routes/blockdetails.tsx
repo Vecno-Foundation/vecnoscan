@@ -125,9 +125,11 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
     );
   };
 
+  const isGenesis = !block.header.parents?.[0]?.parentHashes?.length;
+
   return (
     <>
-      <div className="mt-22 grid w-full grid-cols-1 gap-x-18 gap-y-2 rounded-4xl bg-white p-4 text-left text-nowrap text-black sm:grid-cols-[auto_1fr] sm:p-8">
+      <div className="mt-22 grid w-full grid-cols-1 gap-x-18 gap-y-2 rounded-4xl bg-white p-4 text-left text-black sm:grid-cols-[auto_1fr] sm:p-8">
         <div className="flex flex-row items-center text-2xl sm:col-span-2">
           <Box className="mr-2 h-8 w-8" />
           Block details
@@ -157,19 +159,36 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
         <FieldName name="Parents" infoText="Displays the parents of this block in the BlockDAG." />
         <FieldValue
           value={
-            <div className="flex flex-col gap-1">
-              {(block.header.parents[0]?.parentHashes || []).map((parentHash, idx) => (
-                <VeLink key={idx} linkType="block" link to={parentHash} mono />
-              ))}
-            </div>
+            isGenesis ? (
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-gray-700">Genesis</span>
+                <Tooltip
+                  message="The Genesis Block is the first block on the Vecno blockchain. It has no parents because it is the starting point of the entire BlockDAG."
+                  display={TooltipDisplayMode.Hover}
+                  multiLine
+                >
+                  <Info className="h-4 w-4 fill-gray-500 hover:fill-gray-700 transition-colors" />
+                </Tooltip>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1 break-words">
+                {(block.header.parents[0]?.parentHashes || []).map((parentHash, idx) => (
+                  <div key={idx} className="break-words">
+                    <VeLink linkType="block" link to={parentHash} mono />
+                  </div>
+                ))}
+              </div>
+            )
           }
         />
         <FieldName name="Children" infoText="Displays the children of this block in the BlockDAG." />
         <FieldValue
           value={
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 break-words">
               {(block.verboseData.childrenHashes || []).map((child, idx) => (
-                <VeLink key={idx} linkType="block" link to={child} mono />
+                <div key={idx} className="break-words">
+                  <VeLink linkType="block" link to={child} mono />
+                </div>
               ))}
             </div>
           }
@@ -200,10 +219,10 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
             <FieldValue
               value={
                 <>
-                  <div className="text-link">
+                  <div className="text-link break-words">
                     <Link to={`/addresses/${block.extra.minerAddress}`}>{block.extra.minerAddress}</Link>
                   </div>
-                  <div className="text-gray-500">{block.extra.minerInfo}</div>
+                  <div className="text-gray-500 break-words">{block.extra.minerInfo}</div>
                 </>
               }
             />
@@ -211,25 +230,26 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
         )}
       </div>
 
-      <div className="flex flex-col w-full gap-x-18 gap-y-2 rounded-4xl bg-white p-4 text-left text-nowrap text-black sm:p-8">
+      <div className="flex flex-col w-full gap-x-18 gap-y-2 rounded-4xl bg-white p-4 text-left text-black sm:p-8">
         <div className="mt-4 mb-2 text-black">Transactions</div>
         <PageTable
           alignTop
           headers={["Transaction ID", "From", "", "To", "Amount", "Status"]}
           rows={
             (block.transactions ?? []).map((transaction) => [
-              <VeLink
-                key="txid"
-                linkType="transaction"
-                to={transaction.verboseData.transactionId}
-                link
-                shorten
-                mono
-              />,
-              <ul key="inputs">
+              <div key="txid" className="break-words">
+                <VeLink
+                  linkType="transaction"
+                  to={transaction.verboseData.transactionId}
+                  link
+                  shorten
+                  mono
+                />
+              </div>,
+              <ul key="inputs" className="list-none break-words">
                 {(transaction.inputs ?? []).length > 0 ? (
                   (transaction.inputs ?? []).map((input, idx) => (
-                    <li key={idx}>
+                    <li key={idx} className="break-words">
                       {getAddressFromOutpoint(input.previousOutpoint.transactionId, input.previousOutpoint.index)}
                     </li>
                   ))
@@ -240,9 +260,9 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
                 )}
               </ul>,
               <ArrowRight key="arrow" className="inline h-4 w-4" />,
-              <ul key="outputs">
+              <ul key="outputs" className="list-none break-words">
                 {(transaction.outputs ?? []).map((output, idx) => (
-                  <li key={idx}>
+                  <li key={idx} className="break-words">
                     <VeLink
                       linkType="address"
                       to={output.verboseData.scriptPublicKeyAddress}
@@ -254,11 +274,11 @@ export default function Blocks({ loaderData }: Route.ComponentProps) {
                   </li>
                 ))}
               </ul>,
-              <ul key="amounts">
+              <ul key="amounts" className="list-none break-words">
                 {(transaction.outputs ?? []).map((output, idx) => (
-                  <li key={idx}>
+                  <li key={idx} className="break-words">
                     {numeral(output.amount / 1_0000_0000).format("0,0.00[000000]")}
-                    <span className="text-gray-500 text-nowrap"> VE</span>
+                    <span className="text-gray-500"> VE</span>
                   </li>
                 ))}
               </ul>,
@@ -298,5 +318,5 @@ const FieldName = ({ name, infoText }: { name: string; infoText?: string }) => (
 );
 
 const FieldValue = ({ value }: { value: string | React.ReactNode }) => (
-  <div className="break-all text-wrap">{value}</div>
+  <div className="break-words hyphens-auto">{value}</div>
 );
