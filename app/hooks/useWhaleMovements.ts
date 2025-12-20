@@ -8,9 +8,10 @@ export interface WhaleMovement {
   from_address: string | null;
   to_address: string;
   is_coinbase: boolean;
+  index: number;
 }
 
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "https://api.vecnoscan.org";
+const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:7000";
 
 export const useWhaleMovements = () => {
   return useQuery({
