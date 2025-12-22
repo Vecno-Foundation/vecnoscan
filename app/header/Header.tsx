@@ -5,6 +5,7 @@ import DesktopMenu from "./DesktopMenu";
 import MobileMenu from "./MobileMenu";
 import SearchBox from "./SearchBox";
 import Price from "./Price";
+import Hashrate from "./Hashrate";
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
 
@@ -29,9 +30,14 @@ const Header = ({ expanded, setExpanded }: HeaderProps) => {
       `}
     >
       <div className="relative flex items-center justify-between px-4 py-3 sm:px-6 h-16 sm:h-20">
-        <Link to="/" className="flex items-center z-10">
-          <LogoIcon className="h-9 w-36 sm:h-10 sm:w-44 md:h-11 md:w-48" />
-        </Link>
+        <div className="flex items-center gap-6 z-10">
+          <Link to="/" className="flex items-center">
+            <LogoIcon className="h-9 w-36 sm:h-10 sm:w-44 md:h-11 md:w-48" />
+          </Link>
+          <div className="hidden md:block">
+            <Hashrate />
+          </div>
+        </div>
         {!isHome && (
           <div className="hidden lg:flex absolute inset-x-0 top-1/2 -translate-y-1/2 justify-center pointer-events-none px-4">
             <div className="w-full max-w-sm pointer-events-auto">
@@ -43,7 +49,9 @@ const Header = ({ expanded, setExpanded }: HeaderProps) => {
           <div className="hidden lg:block">
             <DesktopMenu />
           </div>
+
           <Price className="hidden md:block" />
+
           <button
             onClick={() => setExpanded(!expanded)}
             className="lg:hidden p-2 rounded-xl hover:bg-white/10 active:scale-95 transition-all"
@@ -58,8 +66,9 @@ const Header = ({ expanded, setExpanded }: HeaderProps) => {
         </div>
       </div>
       {!expanded && !isHome && (
-        <div className="px-6 pb-4 md:hidden flex justify-center">
+        <div className="px-6 pb-4 md:hidden flex flex-col items-center gap-2">
           <Price />
+          <Hashrate />
         </div>
       )}
       <MobileMenu showMenu={expanded} onCloseRequest={() => setExpanded(false)} />

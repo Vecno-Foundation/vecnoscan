@@ -15,7 +15,7 @@ const Price = ({ className = "" }: PriceProps) => {
   const price = isLoading
     ? "0.00"
     : marketData?.price
-    ? numeral(marketData.price).format("0,0.00")
+    ? numeral(marketData.price).format("0,0.[00]")
     : "0.00";
 
   const change24hRaw = isLoading ? 0 : marketData?.change24h ?? 0;
@@ -24,44 +24,48 @@ const Price = ({ className = "" }: PriceProps) => {
     : change24hRaw;
 
   const isPositive = change24h > 0;
+  const isNeutral = change24h === 0;
 
   return (
     <div
       className={`
-        hidden md:flex items-center gap-4 px-4 py-2 rounded-2xl
-        bg-gray-900/90 border border-gray-800
-        hover:bg-gray-800/90 hover:border-cyan-700
-        transition-all duration-400 group backdrop-blur-xl
+        hidden md:flex items-center justify-between gap-5 px-5 py-2 rounded-xl
+        min-w-20
+        bg-cyan-900/15 backdrop-blur-md border border-cyan-800/30
+        hover:bg-cyan-900/25 hover:border-cyan-700/50
+        transition-all duration-300 group
         ${className}
       `}
+      title="Vecno Price (24h change)"
     >
-      <div className="flex items-center gap-3">
-        <div className="w-6 h-6 flex items-center justify-center">
-          <VecnoIcon className="w-6 h-6 fill-cyan-400 drop-shadow-glow" />
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+          <VecnoIcon className="w-6 h-6 fill-cyan-500 group-hover:fill-cyan-400 transition-colors" />
         </div>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-base font-bold text-white tracking-tight">
-            ${isLoading ? <span className="animate-pulse">0.00</span> : price}
-          </span>
-        </div>
+
+        <span className="text-base font-bold text-white tracking-tight">
+          {isLoading ? (
+            <span className="animate-pulse">Loading...</span>
+          ) : (
+            `$${price}`
+          )}
+        </span>
       </div>
       <div
         className={`
-          flex items-center px-3 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md
-          transition-all duration-500
-          ${isLoading || change24h === 0
-            ? "bg-gray-800/80 text-gray-400 border-gray-700"
+          px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider
+          transition-all duration-300 shadow-sm
+          ${isLoading || isNeutral
+            ? "bg-gray-800/60 text-gray-400 border border-gray-700/50"
             : isPositive
-            ? "bg-cyan-900/70 text-cyan-300 border-cyan-600 shadow-lg shadow-cyan-500/30"
-            : "bg-gray-800/80 text-gray-500 border-gray-700"
+            ? "bg-cyan-800/70 text-cyan-300 border border-cyan-600/80 shadow-cyan-500/20"
+            : "bg-red-900/50 text-red-400 border border-red-800/60 shadow-red-900/20"
           }
         `}
       >
-        <span>
-          {isLoading || change24h === 0
-            ? "0.00%"
-            : `${isPositive ? "+" : ""}${change24h.toFixed(2)}%`}
-        </span>
+        {isLoading || isNeutral
+          ? "0.00%"
+          : `${isPositive ? "+" : ""}${change24h.toFixed(2)}%`}
       </div>
     </div>
   );

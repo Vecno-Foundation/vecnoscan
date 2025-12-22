@@ -3,7 +3,9 @@ import { NavLink, useLocation, useNavigate } from "react-router";
 import VecnoFoundation from "../assets/VecnoFoundation.svg";
 import SearchIcon from "../assets/search.svg";
 import ErrorIcon from "../assets/error.svg";
+import { Hash } from "lucide-react";
 import Spinner from "../Spinner";
+import { useHashrate } from "../hooks/useHashRate";
 import { useBlockById } from "../hooks/useBlockById";
 import { useTransactionById } from "../hooks/useTransactionById";
 import { isValidHashSyntax, isValidVecnoAddressSyntax } from "../utils/vecno";
@@ -40,8 +42,9 @@ const MobileMenu = ({ showMenu, onCloseRequest }: MobileMenuProps) => {
       setSearchValue("");
       setLocalHash("");
       setHasError(false);
+      onCloseRequest();
     }
-  }, [blockFound, localHash, navigate]);
+  }, [blockFound, localHash, navigate, onCloseRequest]);
 
   useEffect(() => {
     if (txFound && localHash) {
@@ -49,8 +52,9 @@ const MobileMenu = ({ showMenu, onCloseRequest }: MobileMenuProps) => {
       setSearchValue("");
       setLocalHash("");
       setHasError(false);
+      onCloseRequest();
     }
-  }, [txFound, localHash, navigate]);
+  }, [txFound, localHash, navigate, onCloseRequest]);
 
   useEffect(() => {
     if (txError && localHash) setHasError(true);
@@ -86,20 +90,21 @@ const MobileMenu = ({ showMenu, onCloseRequest }: MobileMenuProps) => {
   if (!showMenu) return null;
 
   return (
-    <nav className="fixed inset-x-0 top-16 bottom-0 z-50 flex flex-col bg-gray-950 border-t border-gray-800 lg:hidden">
-      <div className="px-6 pt-6 pb-4">
+    <nav className="fixed inset-x-0 top-16 bottom-0 z-50 flex flex-col bg-gray-950/95 backdrop-blur-xl border-t border-cyan-800/30 lg:hidden">
+      <div className="px-5 pt-5 pb-4">
         <form onSubmit={handleSubmit}>
           <div
             className={`
-              group relative flex items-center h-14 rounded-xl bg-white/5 backdrop-blur-2xl
-              border transition-all duration-300
-              ${hasError && !isLoading ? "border-red-500/70" : "border-white/10"}
+              relative flex items-center h-12 rounded-xl
+              bg-cyan-900/15 backdrop-blur-md border
+              transition-all duration-300
+              ${hasError && !isLoading ? "border-red-500/60" : "border-cyan-800/40"}
               ${isLoading ? "border-cyan-500/60" : ""}
-              focus-within:border-cyan-400/70 hover:border-white/30
+              focus-within:border-cyan-500/70 hover:border-cyan-700/50
             `}
             onClick={() => inputRef.current?.focus()}
           >
-            <SearchIcon className="ml-4 w-5 h-5 fill-gray-400 transition-colors group-focus-within:fill-cyan-400" />
+            <SearchIcon className="ml-4 w-5 h-5 fill-gray-400" />
             <input
               ref={inputRef}
               type="text"
@@ -117,73 +122,95 @@ const MobileMenu = ({ showMenu, onCloseRequest }: MobileMenuProps) => {
             />
             <div className="mr-4">
               {hasError && !isLoading ? (
-                <ErrorIcon className="w-5 h-5 fill-red-500 animate-pulse" />
+                <ErrorIcon className="w-5 h-5 fill-red-500" />
               ) : isLoading ? (
-                <Spinner className="w-5 h-5" />
+                <Spinner className="w-5 h-5 text-cyan-400" />
               ) : searchValue ? (
-                <kbd className="text-gray-500 text-xs font-medium select-none">Enter</kbd>
-              ) : (
-                <kbd className="text-gray-600 text-xs font-medium select-none">/</kbd>
-              )}
+                <kbd className="text-xs text-gray-500 font-medium">Enter</kbd>
+              ) : null}
             </div>
           </div>
         </form>
       </div>
-      <div className="flex-1 overflow-y-auto py-4 px-6">
+      <div className="px-5 pb-5">
+        <MobileHashrate />
+      </div>
+      <div className="flex-1 overflow-y-auto px-5 pb-4">
         <div className="space-y-3">
-          <MenuItem name="Blocks" to="/blocks" onClick={onCloseRequest} />
-          <MenuItem name="Transactions" to="/transactions" onClick={onCloseRequest} />
-          <MenuItem name="Addresses" to="/addresses" onClick={onCloseRequest} />
-          <MenuItem name="Movements" to="/movements" onClick={onCloseRequest} />
+          <MobileMenuItem name="Blocks" to="/blocks" onClick={onCloseRequest} />
+          <MobileMenuItem name="Transactions" to="/transactions" onClick={onCloseRequest} />
+          <MobileMenuItem name="Addresses" to="/addresses" onClick={onCloseRequest} />
+          <MobileMenuItem name="Movements" to="/movements" onClick={onCloseRequest} />
         </div>
       </div>
-      <div className="shrink-0 py-12 px-6 border-t border-gray-800 bg-black/40">
-        <div className="flex flex-col items-center">
-          <span className="text-xs uppercase tracking-widest text-gray-500 font-medium">
-            Powered by
-          </span>
-          <a
-            href="https://vecnofoundation.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block transition-transform duration-300 hover:scale-110 active:scale-95 mt-3"
-            aria-label="Vecno Foundation"
-          >
-            <VecnoFoundation className="h-28 w-auto opacity-90 drop-shadow-2xl" />
-          </a>
-        </div>
+      <div className="shrink-0 border-t border-cyan-800/30 bg-black/40 px-6 py-10 flex flex-col items-center">
+        <span className="text-xs uppercase tracking-widest text-gray-500">
+          Powered by
+        </span>
+        <a
+          href="https://vecnofoundation.org/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block mt-4 hover:scale-105 active:scale-95 transition-transform duration-300"
+        >
+          <VecnoFoundation className="h-24 w-auto opacity-85" />
+        </a>
       </div>
     </nav>
   );
 };
 
-interface MenuItemProps {
-  name: string;
-  to: string;
-  onClick?: () => void;
-}
+// Mobile-optimized Hashrate Display
+const MobileHashrate = () => {
+  const { data, isLoading, error } = useHashrate();
 
-const MenuItem = ({ name, to, onClick }: MenuItemProps) => {
+  const formatHashrate = (hashrateMh: number): string => {
+    const n = hashrateMh;
+    if (n < 1_000) return `${n.toFixed(2)} MH/s`;
+    if (n < 1_000_000) return `${(n / 1_000).toFixed(2)} GH/s`;
+    if (n < 1_000_000_000) return `${(n / 1_000_000).toFixed(2)} TH/s`;
+    if (n < 1_000_000_000_000) return `${(n / 1_000_000_000).toFixed(2)} PH/s`;
+    return `${n.toFixed(2)} MH/s`;
+  };
+
+  const formatted = data ? formatHashrate(data.hashrate) : null;
+
   return (
-    <NavLink to={to} end className="block w-full" onClick={onClick}>
+    <div className="flex items-center justify-between h-12 px-5 rounded-xl bg-cyan-900/15 backdrop-blur-md border border-cyan-800/40 hover:border-cyan-700/50 transition-all duration-300">
+      <div className="flex items-center gap-3">
+        <Hash className="w-4 h-4 text-cyan-500" />
+        <span className="text-sm text-gray-400">Network Hashrate</span>
+      </div>
+
+      <span className="text-sm font-bold text-white">
+        {isLoading ? (
+          <span className="animate-pulse">Loading...</span>
+        ) : error ? (
+          <span className="text-red-400">—</span>
+        ) : (
+          formatted
+        )}
+      </span>
+    </div>
+  );
+};
+
+const MobileMenuItem = ({ name, to, onClick }: { name: string; to: string; onClick: () => void }) => {
+  return (
+    <NavLink to={to} end className="block" onClick={onClick}>
       {({ isActive }) => (
         <div
           className={`
-            group relative flex items-center h-16 px-8 rounded-2xl transition-all duration-400 ease-out
+            flex items-center justify-center h-12 px-6 rounded-xl text-sm font-medium tracking-wide
+            transition-all duration-300
+            bg-cyan-900/15 backdrop-blur-md border
             ${isActive
-              ? "bg-cyan-900/60 text-cyan-300 font-semibold shadow-xl shadow-cyan-500/20 border border-cyan-800"
-              : "text-gray-300 hover:bg-gray-900 hover:text-cyan-400 border border-transparent"
+              ? "border-cyan-700/60 text-cyan-300 shadow-lg shadow-cyan-900/30 font-semibold"
+              : "border-cyan-800/30 text-gray-300 hover:bg-cyan-900/25 hover:border-cyan-700/50 hover:text-cyan-400"
             }
           `}
         >
-          <div
-            className={`absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 rounded-r-full transition-all duration-500 ${
-              isActive ? "bg-cyan-500 shadow-lg shadow-cyan-500/50" : "bg-transparent"
-            }`}
-          />
-          <span className="relative z-10 text-lg font-medium tracking-tight">
-            {name}
-          </span>
+          {name}
         </div>
       )}
     </NavLink>
