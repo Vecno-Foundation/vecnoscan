@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { API_BASE } from "../api/vecno-api-client";
 
 export const useAddressTxCount = (address: string) =>
   useQuery({
     queryKey: ["txCount", { address }],
     queryFn: async () => {
-      const { data } = await axios.get(`https://api.vecnoscan.org/addresses/${address}/transactions-count`);
+      const { data } = await axios.get(`${API_BASE}/addresses/${address}/transactions-count`);
       return data as TxCount;
     },
   });

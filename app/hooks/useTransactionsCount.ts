@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "https://api.vecnoscan.org";
+import { API_BASE } from "../api/vecno-api-client";
 
 export interface TransactionsCount {
   total: number;
@@ -13,7 +12,7 @@ export const useTransactionsCount = () =>
   useQuery<TransactionsCount>({
     queryKey: ["transactionsCount"],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_URL}/stats/transactions`);
+      const { data } = await axios.get(`${API_BASE}/stats/transactions`);
       return data;
     },
     staleTime: 1000 * 60 * 2,     // 2 minutes

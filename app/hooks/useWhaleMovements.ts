@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { API_BASE } from "../api/vecno-api-client";
 
 export interface WhaleMovement {
   transaction_id: string;
@@ -11,12 +12,10 @@ export interface WhaleMovement {
   index: number;
 }
 
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "https://api.vecnoscan.org";
-
 export const useWhaleMovements = () => {
   return useQuery({
     queryKey: ["whaleMovements"],
-    queryFn: () => axios.get(`${API_URL}/transactions/whale-movements`),
+    queryFn: () => axios.get(`${API_BASE}/transactions/whale-movements`),
     select: (res) => res.data,
     refetchInterval: 10000,
   });

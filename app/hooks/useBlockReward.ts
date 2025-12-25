@@ -1,16 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { API_BASE } from "../api/vecno-api-client";
 
-interface BlockRewardInfo {
+export interface BlockRewardInfo {
   blockreward: number;
 }
 
 export const useBlockReward = () =>
   useQuery({
-    staleTime: 60000,
     queryKey: ["blockReward"],
     queryFn: async () => {
-      const { data } = await axios.get("https://api.vecnoscan.org/info/blockreward");
-      return data as BlockRewardInfo;
+      const { data } = await axios.get<BlockRewardInfo>(
+        `${API_BASE}/info/blockreward`
+      );
+      return data;
     },
+    staleTime: 60000,
   });

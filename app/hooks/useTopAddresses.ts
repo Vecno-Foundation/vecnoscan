@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { API_BASE } from "../api/vecno-api-client";
 
 interface TopAddress {
   rank: number;
@@ -11,13 +12,11 @@ interface TopAddressesData {
   ranking: TopAddress[];
 }
 
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "https://api.vecnoscan.org";
-
 export const useTopAddresses = () => {
   return useQuery<TopAddressesData>({
     queryKey: ["topAddresses"],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/addresses/balances/csv/paged`, {
+      const res = await axios.get(`${API_BASE}/addresses/balances/csv/paged`, {
         params: { page: 1, items_per_page: 1000 },
         responseType: "text",
       });

@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { API_BASE } from "../api/vecno-api-client";
 
 export const useBlockById = (blockId: string) =>
   useQuery({
     queryKey: ["block", { blockId }],
     queryFn: async () => {
-      const { data } = await axios.get(`https://api.vecnoscan.org/blocks/${blockId}?includeColor=true`);
+      const { data } = await axios.get(`${API_BASE}/blocks/${blockId}?includeColor=true`);
       return data as BlockData;
     },
     enabled: !!blockId,

@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { API_BASE } from "../api/vecno-api-client";
 
-interface BlockdagInfo {
+export interface BlockdagInfo {
   networkName: string;
   blockCount: string;
   headerCount: string;
@@ -9,7 +10,7 @@ interface BlockdagInfo {
   difficulty: number;
   pastMedianTime: string;
   virtualParentHashes: string[];
-  pruningPointHash: string[];
+  pruningPointHash: string;
   virtualDaaScore: string;
 }
 
@@ -17,8 +18,10 @@ export const useBlockdagInfo = () =>
   useQuery({
     queryKey: ["blockdagInfo"],
     queryFn: async () => {
-      const { data } = await axios.get("https://api.vecnoscan.org/info/blockdag");
-      return data as BlockdagInfo;
+      const { data } = await axios.get<BlockdagInfo>(
+        `${API_BASE}/info/blockdag`
+      );
+      return data;
     },
     refetchInterval: 20000,
     staleTime: Infinity,

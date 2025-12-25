@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { API_BASE } from "../api/vecno-api-client";
 
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "https://api.vecnoscan.org";
 const VE = 100_000_000;
 
 export interface Tier {
@@ -19,7 +19,7 @@ export const useAddressDistribution = () =>
   useQuery<DistributionEntry[]>({
     queryKey: ["addressDistribution"],
     queryFn: async () => {
-      const res = await axios.get(`${API_URL}/addresses/balances/csv/paged`, {
+      const res = await axios.get(`${API_BASE}/addresses/balances/csv/paged`, {
         params: { page: 1, items_per_page: 1000 },
         responseType: "text",
       });

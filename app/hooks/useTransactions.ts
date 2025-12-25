@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { API_BASE } from "../api/vecno-api-client";
 
 export const useTransactions = (
   address: string,
@@ -12,7 +13,7 @@ export const useTransactions = (
   useQuery({
     queryKey: ["transaction", { address, before, after, limit, fields, resolve_previous_outpoints }],
     queryFn: async () => {
-      const response = await axios.get(`https://api.vecnoscan.org/addresses/${address}/full-transactions-page`, {
+      const response = await axios.get(`${API_BASE}/addresses/${address}/full-transactions-page`, {
         params: {
           limit,
           before,

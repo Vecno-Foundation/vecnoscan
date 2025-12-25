@@ -1,4 +1,4 @@
-const API_BASE = "https://api.vecnoscan.org";
+export const API_BASE = "https://api.vecnoscan.org";
 
 const DEFAULT_HEADERS = {
   "Access-Control-Allow-Origin": "*",

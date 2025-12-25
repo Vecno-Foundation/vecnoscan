@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { API_BASE } from "../api/vecno-api-client";
 
 export const useTransactionById = (transactionId: string) =>
   useQuery({
     queryKey: ["transaction", { transactionId }],
     queryFn: async () => {
       const { data } = await axios.get(
-        `https://api.vecnoscan.org/transactions/${transactionId}?resolve_previous_outpoints=light`,
+        `${API_BASE}/transactions/${transactionId}?resolve_previous_outpoints=light`,
       );
       return data as TransactionData;
     },
