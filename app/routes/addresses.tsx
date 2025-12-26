@@ -150,10 +150,11 @@ export default function Addresses() {
             rows={paginatedRanking.map((addr) => {
               const balanceVE = addr.amount / VE;
               const valueUSD = balanceVE * (price ?? 0);
+              const fullAddress = `vecno:${addr.address}`;
 
               return [
                 addr.rank + 1,
-                <VeLink linkType="address" link to={addr.address} mono />,
+                <VeLink linkType="address" link to={fullAddress} mono />,
                 renderLabel(addr.address),
                 <div className="text-right font-medium text-nowrap flex items-center justify-end gap-1">
                   {numeral(balanceVE).format("0,0.[0000]")}
@@ -184,6 +185,7 @@ export default function Addresses() {
             const balanceVE = addr.amount / VE;
             const valueUSD = balanceVE * (price ?? 0);
             const percentage = (addr.amount / circulatingSupply) * 100;
+            const fullAddress = `vecno:${addr.address}`;
 
             return (
               <div key={addr.address} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
@@ -194,7 +196,7 @@ export default function Addresses() {
 
                 <div className="mb-4">
                   <div className="text-sm text-gray-500 mb-1">Address</div>
-                  <VeLink linkType="address" link to={addr.address} mono className="text-sm break-all" />
+                  <VeLink linkType="address" link to={fullAddress} mono className="text-sm break-all" />
                 </div>
 
                 {renderLabel(addr.address) && (
