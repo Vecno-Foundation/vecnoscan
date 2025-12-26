@@ -14,6 +14,7 @@ const MAIN_MENU = [
       { name: "Transactions", linkTo: "/transactions" },
       { name: "Addresses", linkTo: "/addresses" },
       { name: "Movements", linkTo: "/movements" },
+      { name: "Analytics", linkTo: "/analytics" },
     ] as MenuChild[],
   },
 ] as const;

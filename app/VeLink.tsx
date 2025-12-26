@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 
 interface VeLinkProps {
-  linkType: "transaction" | "block" | "address" | "movements";
+  linkType: "transaction" | "block" | "address" | "movements" | "analytics";
   linkAdditionalParams?: string;
   to: string;
   className?: string;
@@ -26,6 +26,7 @@ const linkTypeToAddress: Record<VeLinkProps["linkType"], string> = {
   block: "/blocks/",
   address: "/addresses/",
   movements: "/movements/",
+  analytics: "/analytics/",
 };
 
 const VeLink = ({ to, linkType, copy, qr, link, shorten, resolveName, mono }: VeLinkProps) => {

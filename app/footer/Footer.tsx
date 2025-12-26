@@ -21,6 +21,10 @@ const Footer = () => {
         <Link to={"/movements"} className="link-container">
           Movements
         </Link>
+        <Link to={"/analytics"} className="link-container">
+          Analytics
+        </Link>
+
       </div>
       <div className="my-4 h-[1px] w-full bg-gray-900" />
       <div className="flex w-full flex-row items-center justify-center sm:justify-start gap-x-6 text-gray-500">
