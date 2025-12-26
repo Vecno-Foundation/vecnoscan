@@ -91,7 +91,7 @@ export default function Addresses() {
   };
 
   const renderLabel = (address: string) => {
-    const label = addressNames[address];
+    const label = addressNames[`vecno:${address}`];
     if (!label || label.trim() === "") return null;
 
     return (
