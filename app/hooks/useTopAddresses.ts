@@ -17,7 +17,7 @@ export const useTopAddresses = () => {
     queryKey: ["topAddresses"],
     queryFn: async () => {
       const res = await axios.get(`${API_BASE}/addresses/balances/csv/paged`, {
-        params: { page: 1, items_per_page: 1000 },
+        params: { page: 1, items_per_page: 10000 },
         responseType: "text",
       });
 

@@ -1,22 +1,29 @@
 import VeLink from "../VeLink";
 import LoadingMessage from "../LoadingMessage";
 import PageTable from "../PageTable";
+import PageSelector from "../PageSelector";
 import AccountBalanceWallet from "../assets/account_balance_wallet.svg";
 import Vecno from "../assets/vecnos.svg";
-
 import { useAddressNames } from "../hooks/useAddressNames";
 import { useCoinSupply } from "../hooks/useCoinSupply";
 import { useTopAddresses } from "../hooks/useTopAddresses";
 import { MarketDataContext } from "../context/MarketDataProvider";
-
 import Card from "../layout/Card";
 import CardContainer from "../layout/CardContainer";
 import FooterHelper from "../layout/FooterHelper";
 import MainBox from "../layout/MainBox";
 import numeral from "numeral";
-import { useContext } from "react";
+import { useContext, useState, useEffect } from "react";
 
 const VE = 100_000_000;
+const ITEMS_PER_PAGE = 100;
+
+enum PageSelectorClick {
+  FIRST = 0,
+  LAST = 3,
+  PREVIOUS = 2,
+  NEXT = 1,
+}
 
 export function meta() {
   return [
@@ -31,6 +38,15 @@ export default function Addresses() {
   const { data: supply, isLoading: loadingSupply } = useCoinSupply();
   const { data: addressNames = {} } = useAddressNames();
   const { price } = useContext(MarketDataContext);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Scroll to top whenever the page changes
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [currentPage]);
 
   if (loadingTop || loadingSupply || !topData || !supply) {
     return <LoadingMessage>Loading addresses...</LoadingMessage>;
@@ -38,7 +54,6 @@ export default function Addresses() {
 
   const { ranking } = topData;
   const circulatingSupply = supply.circulatingSupply;
-  const circulatingVE = circulatingSupply / VE;
 
   const sumTop = (n: number) => ranking.slice(0, n).reduce((s, a) => s + a.amount, 0);
   const percent = (n: number) => (sumTop(n) / circulatingSupply) * 100;
@@ -47,6 +62,33 @@ export default function Addresses() {
   const totalValueTop100USD = ranking
     .slice(0, 100)
     .reduce((sum, a) => sum + (a.amount / VE) * (price ?? 0), 0);
+
+  const totalPages = Math.ceil(ranking.length / ITEMS_PER_PAGE);
+  const paginatedRanking = ranking.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (action: PageSelectorClick) => {
+    let newPage = currentPage;
+
+    switch (action) {
+      case PageSelectorClick.FIRST:
+        newPage = 1;
+        break;
+      case PageSelectorClick.LAST:
+        newPage = totalPages;
+        break;
+      case PageSelectorClick.PREVIOUS:
+        newPage = Math.max(1, currentPage - 1);
+        break;
+      case PageSelectorClick.NEXT:
+        newPage = Math.min(totalPages, currentPage + 1);
+        break;
+    }
+
+    setCurrentPage(newPage);
+  };
 
   const renderLabel = (address: string) => {
     const label = addressNames[address];
@@ -105,7 +147,7 @@ export default function Addresses() {
               4: "text-right pr-4",
               5: "text-right",
             }}
-            rows={ranking.slice(0, 100).map((addr) => {
+            rows={paginatedRanking.map((addr) => {
               const balanceVE = addr.amount / VE;
               const valueUSD = balanceVE * (price ?? 0);
 
@@ -127,11 +169,18 @@ export default function Addresses() {
               ];
             })}
           />
+          <div className="mt-8 flex justify-center">
+            <PageSelector
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
         </div>
       </div>
       <div className="block md:hidden">
         <div className="p-4 space-y-4">
-          {ranking.slice(0, 100).map((addr) => {
+          {paginatedRanking.map((addr) => {
             const balanceVE = addr.amount / VE;
             const valueUSD = balanceVE * (price ?? 0);
             const percentage = (addr.amount / circulatingSupply) * 100;
@@ -180,6 +229,13 @@ export default function Addresses() {
               </div>
             );
           })}
+        </div>
+        <div className="p-4 flex justify-center">
+          <PageSelector
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         </div>
       </div>
 
