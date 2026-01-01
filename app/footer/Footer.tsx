@@ -38,11 +38,11 @@ const Footer = () => {
           <Twitter className="h-6 w-6 fill-white hover:cursor-pointer hover:fill-gray-300" />
         </a>
         <span className="ms-auto hidden text-nowrap sm:block">
-          © 2025 Vecnoscan. All rights are reserved
+          © 2026 Vecnoscan. All rights are reserved
         </span>
       </div>
       <span className="pt-4 text-nowrap text-gray-500 sm:hidden">
-        © 2025 Vecnoscan. All rights are reserved
+        © 2026 Vecnoscan. All rights are reserved
       </span>
     </div>
   );
