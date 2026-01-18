@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import VecnoFoundation from "../assets/VecnoFoundation.svg";
 import SearchIcon from "../assets/search.svg";
 import ErrorIcon from "../assets/error.svg";

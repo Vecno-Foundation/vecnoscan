@@ -7,7 +7,7 @@ import SearchBox from "./SearchBox";
 import Price from "./Price";
 import Hashrate from "./Hashrate";
 import { useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation } from "react-router-dom";
 
 type HeaderProps = {
   expanded: boolean;

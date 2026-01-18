@@ -5,7 +5,7 @@ import CopyCheck from "./assets/copycheck.svg";
 import QrCode from "./assets/qr_code.svg";
 import { useAddressNames } from "./hooks/useAddressNames";
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 interface VeLinkProps {
   linkType: "transaction" | "block" | "address" | "movements" | "analytics";

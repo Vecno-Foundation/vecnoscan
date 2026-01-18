@@ -25,9 +25,9 @@ import localizedFormat from "dayjs/plugin/localizedFormat";
 import relativeTime from "dayjs/plugin/relativeTime";
 import numeral from "numeral";
 import React, { useContext, useEffect, useState } from "react";
-import { NavLink, useLocation } from "react-router";
+import { NavLink, useLocation } from "react-router-dom";
 
-dayjs().locale("en");
+dayjs.locale("en");
 dayjs.extend(relativeTime);
 dayjs.extend(localeData);
 dayjs.extend(localizedFormat);
@@ -35,8 +35,9 @@ dayjs.extend(localizedFormat);
 export async function loader({ params }: Route.LoaderArgs) {
   const address = params.address;
 
-  if (!isValidVecnoAddressSyntax(address))
+  if (!isValidVecnoAddressSyntax(address)) {
     throw new Response(`Vecno address ${address} doesn't follow the vecno address schema.`, { status: 400 });
+  }
 
   return { address };
 }
@@ -54,57 +55,87 @@ export function meta({ params }: Route.LoaderArgs) {
 
 export default function Addressdetails({ loaderData }: Route.ComponentProps) {
   const location = useLocation();
-  const { data, isLoading: isLoadingAddressBalance } = useAddressBalance(loaderData.address);
-  const { data: utxoData, isLoading: isLoadingUtxoData } = useAddressUtxos(loaderData.address);
-  const { data: txCount, isLoading: isLoadingTxCount } = useAddressTxCount(loaderData.address);
+  const { data: balanceData, isLoading: isLoadingBalance } = useAddressBalance(loaderData.address);
+  const { data: utxoData, isLoading: isLoadingUtxos } = useAddressUtxos(loaderData.address);
+  const { data: txCountData, isLoading: isLoadingTxCount } = useAddressTxCount(loaderData.address);
   const { data: addressNames } = useAddressNames();
   const marketData = useContext(MarketDataContext);
-  const [beforeAfter, setBeforeAfter] = useState<number[]>([0, 0]);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [expand, setExpand] = useState<string[]>([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [beforeAfter, setBeforeAfter] = useState<[number, number]>([0, 0]);
+
+  const [cursorOlder, setCursorOlder] = useState<number | null>(null);
+  const [cursorNewer, setCursorNewer] = useState<number | null>(null);
+
+  const [expandedTxs, setExpandedTxs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    setBeforeAfter([0, 0]);
     setCurrentPage(1);
+    setBeforeAfter([0, 0]);
+    setCursorOlder(null);
+    setCursorNewer(null);
+    setExpandedTxs(new Set());
   }, [loaderData.address]);
 
-  const { data: txData } = useTransactions(
+  const { data: txPageData } = useTransactions(
     loaderData.address,
-    10,
-    currentPage === 1 ? 0 : beforeAfter[0],
-    currentPage === 1 ? 0 : beforeAfter[1],
+    50,
+    beforeAfter[0],
+    beforeAfter[1],
     "",
-    "light",
+    "light"
   );
 
-  const pageChange = (page: number) => {
-    if (page === 0) {
+  useEffect(() => {
+    if (txPageData?.transactions?.length) {
+      const newestTxTime = txPageData.transactions[0]?.block_time;
+      const oldestTxTime = txPageData.transactions[txPageData.transactions.length - 1]?.block_time;
+
+      setCursorOlder(
+        txPageData.nextBefore ? Number(txPageData.nextBefore) : oldestTxTime ?? null
+      );
+      setCursorNewer(
+        txPageData.nextAfter ? Number(txPageData.nextAfter) : newestTxTime ?? null
+      );
+    } else {
+      setCursorOlder(null);
+      setCursorNewer(null);
+    }
+  }, [txPageData]);
+
+  const handlePageChange = (action: number) => {
+    if (action === 0) {
       setBeforeAfter([0, 0]);
       setCurrentPage(1);
-    } else if (page === 1) {
-      setBeforeAfter([txData?.nextBefore ?? 0, 0]);
-      setCurrentPage((currentPage) => currentPage + 1);
-    } else if (page === 2) {
-      setBeforeAfter([0, txData?.nextAfter ?? 0]);
-      setCurrentPage((currentPage) => currentPage - 1);
-    } else if (page === 3) {
+    }
+    else if (action === 1 && cursorOlder !== null && cursorOlder !== 0) {
+      setBeforeAfter([cursorOlder, 0]);
+      setCurrentPage(p => p + 1);
+    }
+    else if (action === 2 && cursorNewer !== null && cursorNewer !== 0) {
+      setBeforeAfter([0, cursorNewer]);
+      setCurrentPage(p => Math.max(1, p - 1));
+    }
+    else if (action === 3) {
+      const lastPage = txCountData ? Math.ceil(txCountData.total / 50) : 1;
       setBeforeAfter([0, 1]);
-      setCurrentPage(Math.ceil(txCount!.total / 10));
+      setCurrentPage(lastPage);
     }
   };
 
-  const transactions = txData?.transactions || [];
+  const transactions = txPageData?.transactions ?? [];
+
+  const balanceFormatted = numeral((balanceData?.balance ?? 0) / 1e8).format("0,0.00[000000]");
+  const usdValue = numeral(((balanceData?.balance ?? 0) / 1e8) * (marketData?.price ?? 0)).format("$0,0.00");
+
+  const totalPages = txCountData ? Math.ceil(txCountData.total / 50) : 1;
 
   if (!loaderData.address) return null;
 
   const isTabActive = (tab: string) => {
     const params = new URLSearchParams(location.search);
-    if (tab === "transactions" && params.get("tab") === null) return true;
-    return params.get("tab") === tab;
+    return (tab === "transactions" && !params.has("tab")) || params.get("tab") === tab;
   };
-
-  const balance = numeral((data?.balance || 0) / 1_0000_0000).format("0,0.00[000000]");
-  const LoadingSpinner = () => <Spinner className="h-5 w-5" />;
 
   return (
     <>
@@ -116,27 +147,26 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
 
         <span className="mt-4 mb-0">Balance</span>
 
-        {!isLoadingAddressBalance ? (
-          <span className="flex flex-row items-center text-[32px]">
-            {balance.split(".")[0]}.<span className="self-end pb-[0.4rem] text-2xl">{balance.split(".")[1]}</span>
-            <Vecno className="fill-primary ml-1 h-8 w-8" />
-          </span>
+        {isLoadingBalance ? (
+          <Spinner className="h-8 w-8" />
         ) : (
-          <LoadingSpinner />
+          <>
+            <span className="flex flex-row items-center text-[32px]">
+              {balanceFormatted.split(".")[0]}.
+              <span className="self-end pb-[0.4rem] text-2xl">{balanceFormatted.split(".")[1]}</span>
+              <Vecno className="fill-primary ml-1 h-8 w-8" />
+            </span>
+            <span className="ml-1 text-gray-500">{usdValue}</span>
+          </>
         )}
-        {!isLoadingAddressBalance ? (
-          <span className="ml-1 text-gray-500">
-            {numeral(((data?.balance || 0) / 1_0000_0000) * (marketData?.price || 0)).format("$0,0.00")}
-          </span>
-        ) : (
-          <LoadingSpinner />
-        )}
+
         <div className="my-4 h-[1px] bg-gray-100 sm:col-span-2" />
 
         <div className="grid grid-cols-1 gap-x-14 gap-y-2 sm:grid-cols-[auto_1fr]">
           <FieldName name="Address" infoText="A unique Vecno address used to send and receive funds." />
           <FieldValue value={<VeLink linkType="address" copy qr to={loaderData.address} />} />
-          {addressNames && addressNames[loaderData.address] && (
+
+          {addressNames?.[loaderData.address] && (
             <>
               <FieldName name="Address Label" infoText="A label assigned to this address." />
               <FieldValue
@@ -148,10 +178,16 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
               />
             </>
           )}
+
           <FieldName name="Transactions" infoText="Total number of transactions involving this address." />
-          <FieldValue value={!isLoadingTxCount ? numeral(txCount!.total).format("0,") : <LoadingSpinner />} />
+          <FieldValue
+            value={isLoadingTxCount ? <Spinner className="h-5 w-5" /> : numeral(txCountData?.total ?? 0).format("0,")}
+          />
+
           <FieldName name="UTXOs" infoText="Unspent, available outputs available at this address." />
-          <FieldValue value={!isLoadingUtxoData ? numeral(utxoData!.length).format("0,") : <LoadingSpinner />} />
+          <FieldValue
+            value={isLoadingUtxos ? <Spinner className="h-5 w-5" /> : numeral(utxoData?.length ?? 0).format("0,")}
+          />
         </div>
       </div>
 
@@ -159,18 +195,18 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
         <div className="mr-auto flex w-auto flex-row items-center justify-around gap-x-1 rounded-full bg-gray-50 p-1 px-1">
           <NavLink
             to={`/addresses/${loaderData.address}?tab=transactions`}
-            preventScrollReset={true}
-            className={() =>
-              `rounded-full px-4 py-1.5 hover:cursor-pointer hover:bg-white ${isTabActive("transactions") ? "bg-white" : ""}`
+            preventScrollReset
+            className={({ isActive }) =>
+              `rounded-full px-4 py-1.5 hover:cursor-pointer hover:bg-white ${isActive ? "bg-white" : ""}`
             }
           >
             Transactions
           </NavLink>
           <NavLink
             to={`/addresses/${loaderData.address}?tab=utxos`}
-            preventScrollReset={true}
-            className={() =>
-              `rounded-full px-4 py-1.5 hover:cursor-pointer hover:bg-white ${isTabActive("utxos") ? "bg-white" : ""}`
+            preventScrollReset
+            className={({ isActive }) =>
+              `rounded-full px-4 py-1.5 hover:cursor-pointer hover:bg-white ${isActive ? "bg-white" : ""}`
             }
           >
             UTXOs
@@ -190,22 +226,24 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
                     4: "md:w-40 lg:w-50",
                     3: "hidden md:table-cell",
                   }}
-                  rows={transactions.map((transaction) => [
+                  rows={transactions.map((tx) => [
                     <Tooltip
-                      key="timestamp"
-                      message={dayjs(transaction.block_time).format("MMM D, YYYY h:mm A")}
+                      key="ts"
+                      message={dayjs(tx.block_time).format("MMM D, YYYY h:mm A")}
                       display={TooltipDisplayMode.Hover}
                     >
-                      {dayjs(transaction.block_time).fromNow()}
+                      {dayjs(tx.block_time).fromNow()}
                     </Tooltip>,
-                    <VeLink key="txid" shorten linkType="transaction" link to={transaction.transaction_id} mono />,
-                    (transaction.inputs || []).length > 0 ? (
+
+                    <VeLink key="txid" shorten linkType="transaction" link to={tx.transaction_id} mono />,
+
+                    tx.inputs?.length ? (
                       <ul key="inputs" className="leading-tight">
-                        {(transaction.inputs || [])
-                          .slice(0, expand.includes(transaction.transaction_id) ? undefined : 5)
-                          .map((input, idx) =>
+                        {tx.inputs
+                          .slice(0, expandedTxs.has(tx.transaction_id) ? undefined : 5)
+                          .map((input, i) =>
                             input.previous_outpoint_address ? (
-                              <li key={idx}>
+                              <li key={i}>
                                 <VeLink
                                   link={input.previous_outpoint_address !== loaderData.address}
                                   linkType="address"
@@ -217,27 +255,29 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
                               </li>
                             ) : null
                           )}
-                        {(transaction.inputs || []).length > 5 && !expand.includes(transaction.transaction_id) && (
+
+                        {tx.inputs.length > 5 && !expandedTxs.has(tx.transaction_id) && (
                           <span
-                            key="show-more"
                             className="text-link cursor-pointer hover:underline"
-                            onClick={() => setExpand((prev) => [...prev, transaction.transaction_id])}
+                            onClick={() => setExpandedTxs(prev => new Set([...prev, tx.transaction_id]))}
                           >
-                            Show more (+{(transaction.inputs || []).length - 5})
+                            Show more (+{tx.inputs.length - 5})
                           </span>
                         )}
                       </ul>
                     ) : (
                       <Coinbase key="coinbase" />
                     ),
+
                     <ArrowRight key="arrow" className="inline h-4 w-4" />,
+
                     <ul key="outputs" className="leading-tight">
-                      {(transaction.outputs || []).map((output, idx) => (
-                        <li key={idx}>
+                      {tx.outputs?.map((out, i) => (
+                        <li key={i}>
                           <VeLink
                             linkType="address"
-                            to={output.script_public_key_address}
-                            link={loaderData.address !== output.script_public_key_address}
+                            to={out.script_public_key_address}
+                            link={loaderData.address !== out.script_public_key_address}
                             shorten
                             resolveName
                             mono
@@ -245,36 +285,36 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
                         </li>
                       ))}
                     </ul>,
+
                     <>
                       {numeral(
-                        ((transaction.inputs || []).reduce(
-                          (acc, input) =>
-                            acc -
-                            (loaderData.address === (input.previous_outpoint_address || "")
-                              ? input.previous_outpoint_amount || 0
-                              : 0),
-                          0,
-                        ) +
-                          (transaction.outputs || []).reduce(
-                            (acc, output) =>
-                              acc + (loaderData.address === output.script_public_key_address ? output.amount : 0),
-                            0,
-                          )) /
-                          1_0000_0000,
+                        ((tx.outputs?.reduce(
+                          (sum, o) => sum + (o.script_public_key_address === loaderData.address ? o.amount : 0),
+                          0
+                        ) ?? 0) -
+                          (tx.inputs?.reduce(
+                            (sum, inp) =>
+                              sum +
+                              (inp.previous_outpoint_address === loaderData.address ? inp.previous_outpoint_amount ?? 0 : 0),
+                            0
+                          ) ?? 0)) /
+                        1e8
                       ).format("+0,0.00[000000]")}
                       <span className="text-gray-500 text-nowrap"> VE</span>
                     </>,
+
                     <span key="status" className="text-sm">
-                      {transaction.is_accepted ? <Accepted /> : <NotAccepted />}
+                      {tx.is_accepted ? <Accepted /> : <NotAccepted />}
                     </span>,
                   ])}
                 />
-                <div className="ms-auto me-5 flex flex-row justify-center items-center">
+
+                <div className="mt-6 flex justify-center">
                   {!isLoadingTxCount && (
                     <PageSelector
                       currentPage={currentPage}
-                      totalPages={Math.ceil(txCount!.total / 10)}
-                      onPageChange={pageChange}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
                     />
                   )}
                 </div>
@@ -294,17 +334,17 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
             {(utxoData?.length ?? 0) > 0 ? (
               <>
                 <PageTable
-                  rows={(utxoData?.slice(0, 50) || []).map((utxo, index) => [
-                    utxo.utxoEntry.blockDaaScore,
-                    <VeLink key={`tx-${index}`} linkType="transaction" to={utxo.outpoint.transactionId} link />,
-                    utxo.outpoint.index,
-                    numeral(parseFloat(utxo.utxoEntry.amount) / 1_0000_0000).format("0,0.00[000000]") + " VE",
-                  ])}
                   headers={["Block DAA Score", "Transaction ID", "Index", "Amount"]}
+                  rows={(utxoData ?? []).slice(0, 50).map((utxo, idx) => [
+                    utxo.utxoEntry.blockDaaScore,
+                    <VeLink key={idx} linkType="transaction" to={utxo.outpoint.transactionId} link />,
+                    utxo.outpoint.index,
+                    `${numeral(Number(utxo.utxoEntry.amount) / 1e8).format("0,0.00[000000]")} VE`,
+                  ])}
                 />
-                {utxoData && utxoData.length >= 50 && (
-                  <div className="me-auto ms-auto text-center">
-                    There are more than 50 UTXOs for this address, which are not displayed.
+                {utxoData && utxoData.length > 50 && (
+                  <div className="mt-4 text-center text-gray-600">
+                    There are more than 50 UTXOs for this address (only first 50 shown)
                   </div>
                 )}
               </>
@@ -318,6 +358,7 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
           </>
         )}
       </div>
+
       <FooterHelper icon={AccountBalanceWallet}>
         <span>
           An address is a unique identifier on the blockchain used to send, receive, and store assets or data. It holds
@@ -329,14 +370,16 @@ export default function Addressdetails({ loaderData }: Route.ComponentProps) {
 }
 
 const FieldName = ({ name, infoText }: { name: string; infoText?: string }) => (
-  <div className="flex flex-row items-start fill-gray-500 text-gray-500 sm:col-start-1">
-    <div className="flex flex-row items-center">
-      <Tooltip message={infoText || ""} display={TooltipDisplayMode.Hover} multiLine>
-        <Info className="h-4 w-4" />
-      </Tooltip>
-      <span className="ms-1">{name}</span>
+  <div className="flex items-start text-gray-500 sm:col-start-1">
+    <div className="flex items-center">
+      {infoText && (
+        <Tooltip message={infoText} display={TooltipDisplayMode.Hover} multiLine>
+          <Info className="h-4 w-4" />
+        </Tooltip>
+      )}
+      <span className="ml-1">{name}</span>
     </div>
   </div>
 );
 
-const FieldValue = ({ value }: { value: string | React.ReactNode }) => <span>{value}</span>;
+const FieldValue = ({ value }: { value: React.ReactNode }) => <div>{value}</div>;

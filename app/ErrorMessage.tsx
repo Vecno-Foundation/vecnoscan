@@ -1,7 +1,7 @@
 import Button from "./Button";
 import ErrorIcon from "./assets/404.svg";
 import type { ReactNode } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 interface ErrorMessageProps {
   children: ReactNode;

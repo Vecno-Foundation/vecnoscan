@@ -21,7 +21,7 @@ import localizedFormat from "dayjs/plugin/localizedFormat";
 import relativeTime from "dayjs/plugin/relativeTime";
 import numeral from "numeral";
 import { useContext } from "react";
-import { NavLink, useLocation } from "react-router";
+import { NavLink, useLocation } from "react-router-dom";
 
 dayjs().locale("en");
 dayjs.extend(relativeTime);

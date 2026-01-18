@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink } from "react-router";
+import { NavLink } from "react-router-dom";
 import ChevronUp from "../assets/chevron-up.svg";
 import VecnoFoundation from "../assets/VecnoFoundation.svg";
 

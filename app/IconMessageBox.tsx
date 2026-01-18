@@ -1,7 +1,7 @@
 import Button from "./Button";
 import ErrorIcon from "./assets/404.svg";
 import Data from "./assets/data.svg";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 interface DataMessageProps {
   goBack?: boolean;

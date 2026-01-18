@@ -1,20 +1,31 @@
 import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = "wss://socket.vecnoscan.org";
-export const socket = io(SOCKET_URL, {
-  path: "/socket.io",
-  autoConnect: true,
-});
+const SOCKET_URL = "wss://socket2.vecnoscan.org";
+
+export let socket: Socket;
+
+if (typeof window !== "undefined") {
+  socket = io(SOCKET_URL, {
+    path: "/socket.io",
+    autoConnect: true,
+  });
+}
+
+export const getSocket = (): Socket | undefined => {
+  return typeof window !== "undefined" ? socket : undefined;
+};
 
 export const useSocketConnected = () => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout | null = null;
+    if (typeof window === "undefined") return;
+
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const handleConnect = () => {
-      clearTimeout(timeoutId!);
+      if (timeoutId !== null) clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         setConnected(true);
       }, 200);
@@ -22,15 +33,23 @@ export const useSocketConnected = () => {
 
     const handleDisconnect = () => {
       setConnected(false);
-      clearTimeout(timeoutId!);
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
     };
 
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
 
+    if (socket.connected) {
+      handleConnect();
+    }
+
     return () => {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
+      if (timeoutId !== null) clearTimeout(timeoutId);
     };
   }, []);
 

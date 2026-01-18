@@ -1,7 +1,7 @@
 import Discord from "../assets/discord.svg";
 import Github from "../assets/github.svg";
 import Twitter from "../assets/twitter.svg";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (

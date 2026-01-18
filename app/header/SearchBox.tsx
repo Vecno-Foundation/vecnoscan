@@ -5,7 +5,7 @@ import { useBlockById } from "../hooks/useBlockById";
 import { useTransactionById } from "../hooks/useTransactionById";
 import { isValidHashSyntax, isValidVecnoAddressSyntax } from "../utils/vecno";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   className?: string;
@@ -88,9 +88,12 @@ const SearchBox = ({
       onClick={() => inputRef.current?.focus()}
     >
       <SearchIcon className="ml-4 w-5 h-5 fill-gray-400 transition-colors group-focus-within:fill-cyan-400" />
+
       <input
         ref={inputRef}
-        type="text"
+        type="search"
+        id="global-search"
+        name="q"
         value={value}
         onChange={handleChange}
         onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
@@ -99,7 +102,9 @@ const SearchBox = ({
         autoCapitalize="off"
         autoCorrect="off"
         spellCheck={false}
+        autoComplete="off"
       />
+
       <div className="mr-4 flex items-center">
         {showError ? (
           <ErrorIcon className="w-5 h-5 fill-red-500 animate-pulse" />
@@ -111,6 +116,7 @@ const SearchBox = ({
           <kbd className="text-gray-600 text-xs font-medium select-none">/</kbd>
         )}
       </div>
+
       <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity text-xs text-gray-500 whitespace-nowrap">
         Press Enter to search
       </div>

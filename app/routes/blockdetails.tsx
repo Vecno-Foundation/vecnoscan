@@ -19,7 +19,7 @@ import localizedFormat from "dayjs/plugin/localizedFormat";
 import relativeTime from "dayjs/plugin/relativeTime";
 import numeral from "numeral";
 import React, { useEffect } from "react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 dayjs().locale("en");
 dayjs.extend(relativeTime);

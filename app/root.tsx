@@ -1,15 +1,13 @@
 import type { Route } from "./+types/root";
-import ErrorMessage from "./ErrorMessage";
 import IconMessageBox from "./IconMessageBox";
 import "./app.css";
-import ErrorIcon from "./assets/error.svg";
 import Info from "./assets/info.svg";
 import { MarketDataProvider } from "./context/MarketDataProvider";
 import Footer from "./footer/Footer";
 import Header from "./header/Header";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { useState } from "react";
-import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router-dom";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

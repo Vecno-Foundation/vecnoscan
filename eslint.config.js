@@ -21,6 +21,6 @@ export default defineConfig([
     rules: { "react/react-in-jsx-scope": "off", "max-len": ["warn", 120] },
   },
   {
-    ignores: [".react-router/**"],
+    ignores: [".react-routerw/**"],
   },
 ]);
