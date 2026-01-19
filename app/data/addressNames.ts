@@ -10,6 +10,7 @@ export const ADDRESS_NAMES: Record<string, string> = {
   "vecno:qqvcuc2vn3n6kgtq649gt555c35wa556wt734wurcldqt58n0yrxuq7emej2z": "Vecnopool.de",
   "vecno:qpgp07pwe540k7me5dhhtzt3mxqkuwugh3et6whs23l6dhflxk77uqp2rlpts": "Vecnopool.com",
   "vecno:qrllllllllllllllllllllllllllllllllllllllllllllllllll7skst8zc2": "Burn Address",
+  "vecno:qr2nrsrxgueuy5wwwkhtvqm8pt95qzp268tc2a4mqyhyzuvnqlmhzc3ktm3xu": "Safetrade Exchange",
 };
 
 export type AddressNames = typeof ADDRESS_NAMES;
