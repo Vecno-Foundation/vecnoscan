@@ -10,21 +10,21 @@ interface PriceProps {
 const Price = ({ className = "" }: PriceProps) => {
   const marketData = useContext(MarketDataContext);
 
-  const isLoading = !marketData || marketData.price === undefined || marketData.price === null;
+  const isLoading = marketData.isLoading || marketData.price === null;
+  const hasError = marketData.error;
 
-  const price = isLoading
-    ? "0.00"
-    : marketData?.price
-    ? numeral(marketData.price).format("0,0.[00]")
+  const formattedPrice = marketData.price
+    ? numeral(marketData.price).format("0,0.[00000]")
     : "0.00";
 
-  const change24hRaw = isLoading ? 0 : marketData?.change24h ?? 0;
-  const change24h = typeof change24hRaw === "string"
-    ? parseFloat(change24hRaw.replace("%", ""))
-    : change24hRaw;
+  // Safely parse 24h change
+  const change24hRaw = marketData.change24h;
+  const changeValue = typeof change24hRaw === "string"
+    ? parseFloat(change24hRaw.replace(/[^0-9.-]/g, ""))
+    : 0;
 
-  const isPositive = change24h > 0;
-  const isNeutral = change24h === 0;
+  const isPositive = changeValue > 0;
+  const isNeutral = changeValue === 0;
 
   return (
     <div
@@ -44,28 +44,29 @@ const Price = ({ className = "" }: PriceProps) => {
         </div>
 
         <span className="text-base font-bold text-white tracking-tight">
-          {isLoading ? (
+          {isLoading || hasError ? (
             <span className="animate-pulse">Loading...</span>
           ) : (
-            `$${price}`
+            `$${formattedPrice}`
           )}
         </span>
       </div>
+
       <div
         className={`
           px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider
           transition-all duration-300 shadow-sm
-          ${isLoading || isNeutral
+          ${isLoading || hasError || isNeutral
             ? "bg-gray-800/60 text-gray-400 border border-gray-700/50"
             : isPositive
-            ? "bg-cyan-800/70 text-cyan-300 border border-cyan-600/80 shadow-cyan-500/20"
-            : "bg-red-900/50 text-red-400 border border-red-800/60 shadow-red-900/20"
+              ? "bg-cyan-800/70 text-cyan-300 border border-cyan-600/80 shadow-cyan-500/20"
+              : "bg-red-900/50 text-red-400 border border-red-800/60 shadow-red-900/20"
           }
         `}
       >
-        {isLoading || isNeutral
+        {isLoading || hasError
           ? "0.00%"
-          : `${isPositive ? "+" : ""}${change24h.toFixed(2)}%`}
+          : marketData.change24h}
       </div>
     </div>
   );

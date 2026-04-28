@@ -7,6 +7,14 @@ import {
   type ReactNode,
 } from "react";
 
+interface VecnoMarketResponse {
+  current_price?: {
+    usd?: number;
+  };
+  usd?: number;
+  price_change_percentage_24h?: number;
+}
+
 interface MarketData {
   price: number | null;
   change24h: string | null;
@@ -28,18 +36,24 @@ export const MarketDataProvider = ({ children }: { children: ReactNode }) => {
 
   const updateMarketData = async () => {
     try {
-      const resp = await getMarketData();
+      const resp = (await getMarketData()) as VecnoMarketResponse;
 
       const usdPrice = resp?.current_price?.usd ?? resp?.usd ?? null;
       const change24hRaw = resp?.price_change_percentage_24h ?? null;
 
+      let formattedPrice: number | null = null;
+      if (typeof usdPrice === "number" && !isNaN(usdPrice) && usdPrice > 0) {
+        formattedPrice = Number(usdPrice.toFixed(5));
+      }
+
+      // Format 24h change
       let formattedChange: string | null = null;
       if (typeof change24hRaw === "number" && !isNaN(change24hRaw)) {
         formattedChange = numeral(change24hRaw).format("+0.00%");
       }
 
       setMarketData({
-        price: typeof usdPrice === "number" ? usdPrice : 0.02,
+        price: formattedPrice,
         change24h: formattedChange ?? "0.00%",
         isLoading: false,
         error: false,
@@ -47,8 +61,8 @@ export const MarketDataProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error("Failed to fetch market data:", err);
       setMarketData({
-        price: 0.02,
-        change24h: "0.00%",
+        price: null,
+        change24h: null,
         isLoading: false,
         error: true,
       });

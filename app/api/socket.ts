@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = "wss://socket2.vecnoscan.org";
+const SOCKET_URL = "wss://socket.vecnoscan.org";
 
 export let socket: Socket;
 
